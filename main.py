@@ -1,3 +1,5 @@
+# main.py
+
 from fastapi import FastAPI
 import json
 
@@ -22,4 +24,13 @@ def view():
     data = load_data()
     return data
 
-@app.get('/')
+@app.get('/patient/{patient_id}')
+def view_patient(patient_id: str):
+    # Load all the patients records
+    data = load_data() # Defined above
+
+    patient_id = patient_id.upper()  # Make lookup case-insensitive
+    
+    if patient_id in data:
+        return data[patient_id]
+    return {'error': 'patient not found'}
