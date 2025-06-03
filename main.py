@@ -102,4 +102,58 @@ def create_patient(patient: Patient): # Input(patient) is Pydantic Model (Patien
     # Returning a response
     return JSONResponse(status_code=201, content={'message':'patient created successfully'})
 
+
 # Defining Endpoints to edit the details
+@app.put('/edit/{patient_id}')
+def update_patient(patient_id: str, patient_update: PatientUpdate):
+
+
+    data = load_data() # Using prev defined utility func
+
+    if patient_id not in data:
+        raise HTTPException(status_code = 404, detail='Patient Not Found')
+    
+    existing_patient_info = data[patient_id] # Dictionary
+
+    # Need to udpate Pydantic object (patient_update) to Dict using dump
+    updated_patient_info = patient_update.model_dump(exclude_unset=True) # Using exclude to get specific info
+
+    for key, value in updated_patient_info.items(): # Extracting key, value from dict
+        existing_patient_info[key] = value # Making changes in exisiting dict
+
+    # 1. Updating existing patient info to Pydantic object
+    # NO id Field, add id key
+    existing_patient_info['id'] = patient_id
+    patient_pydantic_obj = Patient(**existing_patient_info) 
+    
+    # 2. From Pydantic object, form a Dict
+    existing_patient_info = patient_pydantic_obj.model_dump(exclude='id')
+
+    # 3. Add this dict to data
+    data[patient_id] = existing_patient_info
+
+        # bmi and verdict also needs to be updated as per weight
+        # Need to have updated compute values
+
+    # 4. Save Data
+    save_data(data)
+
+    # Sucess json response
+    return JSONResponse(status_code=200, content={'message': 'patient updated'})
+
+
+# Delete Endpoint
+@app.delete('/delete/{patient_id}')
+def delete_patient(patient_id: str):
+
+    # load data
+    data = load_data()
+
+    if patient_id not in data:
+        raise HTTPException(status_code=404, detail='Patient not found')
+    
+    del data[patient_id]
+
+    save_data(data)
+
+    return JSONResponse(status_code=200, content={'message': 'patient deleted'})
